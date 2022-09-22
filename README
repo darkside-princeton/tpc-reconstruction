@@ -1,0 +1,15 @@
+To process a run, use the following command:
+
+./waveTPC -c CONFIG_FILE -d PATH_TO_DIRECTORY_CONTAINING_DATA ANALYSIS_MODE 
+
+Possible ANALYSIS_MODE options include:
+	 --noise         (for Noise Characterization)
+	 --SiPM          (for SiPM Characterization)
+	 --generate      (for generating simulated waveforms)
+	 --TPC           (for TPC Runs)
+	 --display       (for running the Event Viewer to plot analysis on individual channels)
+	 --TPC --display (for running the Event Viewer to plot analysis performed in TPC Runs)
+
+To process a subset of the data, add the following argument:
+   --nevents NUM_EVENTS
+
