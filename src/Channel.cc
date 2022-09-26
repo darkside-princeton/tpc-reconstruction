@@ -93,22 +93,63 @@ void Channel::ProcessNoise() {
 
 void Channel::SetWaveforms() {
   _raw_wf->CalcBaseline();
-  _raw_wf->CalcExtrema();
   _bl_sub_wf = _raw_wf->SubtractBaseline();
-  _bl_sub_wf->CalcBaseline();
-  _bl_sub_wf->CalcExtrema();
-  _total_integral = _bl_sub_wf->Integrate(0, Config::Get()->GetParameterI("num_samps"));
-  _integral_wf = _bl_sub_wf->CalcRollingIntegral();
-  _filtered_wf_low = _bl_sub_wf->LowPassFilter();
-  _filtered_wf_high = _bl_sub_wf->HighPassFilter();
-  _filtered_wf_high2 = _filtered_wf_high->HighPassFilter();
-  _filtered_wf_high3 = _filtered_wf_high2->HighPassFilter();
+  float max_val_raw = INT_MIN; int max_samp_raw = 0;
+  float min_val_raw = INT_MAX; int min_samp_raw = 0;
+  float max_val_sub = INT_MIN; int max_samp_sub = 0;
+  float min_val_sub = INT_MAX; int min_samp_sub = 0;
+  _total_integral = 0;
+  _integral_wf = new Waveform();
+  _integral_wf->SetAmp(0,0); int int_samp = 0;
+  _filtered_wf_low = new Waveform; int filt_samp = 0;
+  double cutoff = Config::Get()->GetParameterD("cutoff_freq_low");
+  double RC = 1/ (2 * 3.1415 * cutoff);
+  double alpha = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
+  _filtered_wf_low->SetAmp(0, _bl_sub_wf->GetAmp(0));
+
   _diff_wf = new Waveform();
   for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++) {
+    
+    // Extrema for raw waveform
+    if(_raw_wf->GetAmp(i_s) > max_val_raw){
+      max_val_raw = _raw_wf->GetAmp(i_s);
+      max_samp_raw = i_s;
+    }
+    if(_raw_wf->GetAmp(i_s) < min_val_raw){
+      min_val_raw = _raw_wf->GetAmp(i_s);
+      min_samp_raw = i_s;
+    }
+
+    // Extrema for subtracted waveform
+    if(_bl_sub_wf->GetAmp(i_s) > max_val_sub){
+      max_val_sub = _bl_sub_wf->GetAmp(i_s);
+      max_samp_sub = i_s;
+    }
+    if(_bl_sub_wf->GetAmp(i_s) < min_val_sub){
+      min_val_sub = _bl_sub_wf->GetAmp(i_s);
+      min_samp_sub = i_s;
+    }
+
+    // Calculating total integral
+    _total_integral += _bl_sub_wf->GetAmp(i_s);
+  
+    // Calculating rolling integral
+    int_samp = min(i_s + 1, Config::Get()->GetParameterI("num_samps")-1);
+    _integral_wf->SetAmp(int_samp , _bl_sub_wf->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
+
+    // Calculating filtered waveform
+    filt_samp = min(i_s, Config::Get()->GetParameterI("num_samps")-2);
+    _filtered_wf_low->SetAmp(filt_samp + 1, (1-alpha) * _filtered_wf_low->GetAmp(filt_samp) + alpha * _bl_sub_wf->GetAmp(filt_samp ));  
+
+    // Calculating derivative waveform
     if(i_s > Config::Get()->GetParameterI("derivative_offset")) {
       _diff_wf->SetAmp(i_s,_filtered_wf_low->GetAmp(i_s) - _filtered_wf_low->GetAmp(i_s-Config::Get()->GetParameterI("derivative_offset")));
     }
+
   }
+
+  _raw_wf->SetExtrema(max_val_raw, max_samp_raw, min_val_raw, min_samp_raw);
+  _bl_sub_wf->SetExtrema(max_val_sub, max_samp_sub, min_val_sub, min_samp_sub);
 }
 
 /*--------------------------------------------------------------------*/

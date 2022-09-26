@@ -58,6 +58,7 @@ class Waveform{
   
   //Set Functions
   void CalcExtrema();
+  void SetExtrema(float max, int max_samp, float min, int min_samp) {_max = max; _max_samp = max_samp; _min = min; _min_samp = min_samp;}
   void CalcBaseline(double threshold = Config::Get()->GetParameterD("pulse_threshold"));
   void SetAmp(int s,float x) {_amplitudes[s] = x;}
   void CalcFFT();
