@@ -34,13 +34,13 @@ void Event::ProcessEvent() {
     Output::Get()->total_pulses[i_ch] += _channels[i_ch]->GetNPulses(); // Counting total pulses
     for(int i_p = 0; i_p < _channels[i_ch]->GetNPulses(); i_p++) {
       if(pulses[i_p]->GetNAfterPulses() == 0 &&
-	 pulses[i_p]->GetIntegral() > Config::Get()->GetParameterD("min_SPE_charge") &&
-	 pulses[i_p]->GetIntegral() < Config::Get()->GetParameterD("max_SPE_charge") &&
-	 pulses[i_p]->GetHeight() > Config::Get()->GetParameterD("min_SPE_height") &&
-	 pulses[i_p]->GetHeight() < Config::Get()->GetParameterD("max_SPE_height") &&
-	 pulses[i_p]->GetEndTime() - pulses[i_p]->GetStartTime() > Config::Get()->GetParameterD("min_SPE_length") &&
-	 pulses[i_p]->GetEndTime() - pulses[i_p]->GetStartTime() < Config::Get()->GetParameterD("max_SPE_length")) 
-	Output::Get()->total_SPE_pulses[i_ch]++; // Counting total SPE pulses
+	    pulses[i_p]->GetIntegral() > Config::Get()->GetParameterD("min_SPE_charge") &&
+	    pulses[i_p]->GetIntegral() < Config::Get()->GetParameterD("max_SPE_charge") &&
+	    pulses[i_p]->GetHeight() > Config::Get()->GetParameterD("min_SPE_height") &&
+	    pulses[i_p]->GetHeight() < Config::Get()->GetParameterD("max_SPE_height") &&
+	    pulses[i_p]->GetEndTime() - pulses[i_p]->GetStartTime() > Config::Get()->GetParameterD("min_SPE_length") &&
+	    pulses[i_p]->GetEndTime() - pulses[i_p]->GetStartTime() < Config::Get()->GetParameterD("max_SPE_length")) 
+	    Output::Get()->total_SPE_pulses[i_ch]++; // Counting total SPE pulses
     }
   }
   
@@ -54,7 +54,7 @@ void Event::ProcessEvent() {
       TFile *f = new TFile(Config::Get()->GetParameterS("avgPulse_file").c_str());
       TGraph* avgPulse_input = (TGraph*)f->Get(Config::Get()->GetParameterS("avgPulse_name").c_str());
       for(int i_s = 0 ; i_s < Config::Get()->GetParameterI("pulse_avg_samps"); i_s++) {
-	response->SetAmp(i_s, avgPulse_input->GetY()[Config::Get()->GetParameterI("pulse_avg_buf") + i_s]);
+	      response->SetAmp(i_s, avgPulse_input->GetY()[Config::Get()->GetParameterI("pulse_avg_buf") + i_s]);
       }
       delete f;
       delete avgPulse_input;
@@ -62,7 +62,7 @@ void Event::ProcessEvent() {
       response->WaveformFree();
       delete response;
       for(unsigned int i_c = 0; i_c < _clusters.size(); i_c++) {
-	if(_clusters[i_c]->GetS1() == true) Output::Get()->total_S1_pulses++; // Counting total S1 pulses
+	      if(_clusters[i_c]->GetS1() == true) Output::Get()->total_S1_pulses++; // Counting total S1 pulses
       }
     }
   }
@@ -103,8 +103,8 @@ void Event::PulseOutput() {
       vector<double> ap_peak_time;
       vector<double> ap_height;
       for(int j = 0; j < pulses[i]->GetNAfterPulses(); j++) {
-	ap_peak_time.push_back(pulses[i]->GetAfterPulse(j)->GetPeakTime());
-	ap_height.push_back(pulses[i]->GetAfterPulse(j)->GetHeight());
+	      ap_peak_time.push_back(pulses[i]->GetAfterPulse(j)->GetPeakTime());
+	      ap_height.push_back(pulses[i]->GetAfterPulse(j)->GetHeight());
       }
       Output::Get()->ap_peak_times[i_ch].push_back(ap_peak_time);
       Output::Get()->ap_heights[i_ch].push_back(ap_height);
@@ -173,8 +173,8 @@ void Event::ClusterOutput() {
       vector<double> cl_pulse_peak_time;
       vector<double> cl_pulse_height;
       for(unsigned int i_p = 0; i_p < _clusters[i_c]->GetPulses(i_ch).size(); i_p++) {
-	cl_pulse_peak_time.push_back(_clusters[i_c]->GetPulse(i_ch, i_p)->GetPeakTime());
-	cl_pulse_height.push_back(_clusters[i_c]->GetPulse(i_ch, i_p)->GetHeight());
+	      cl_pulse_peak_time.push_back(_clusters[i_c]->GetPulse(i_ch, i_p)->GetPeakTime());
+	      cl_pulse_height.push_back(_clusters[i_c]->GetPulse(i_ch, i_p)->GetHeight());
       }
       Output::Get()->pulse_peak_time[i_ch].push_back(cl_pulse_peak_time);
       Output::Get()->pulse_height[i_ch].push_back(cl_pulse_height);
@@ -214,6 +214,7 @@ void Event::CalcSumWaveform() {
 /*--------------------------------------------------------------------*/
 
 void Event::FindClusters() {
+  // Performs pulse-finding on the summed-waveform
   if(_sum_wf == NULL) CalcSumWaveform();
 
   for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++) {
@@ -242,32 +243,32 @@ void Event::FindClusters() {
         if (cluster_end > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
         if(_sum_wf->GetAmp(cluster_end) > max_val) {max_val = _sum_wf->GetAmp(cluster_end);}
         if(_sum_wf->GetAmp(cluster_end) < min_val) {min_val = _sum_wf->GetAmp(cluster_end);}
-	// Checking for pulse overlap
-	int second_pulse_length = 0;
-	if (_sum_wf->GetAmp(cluster_end) - min_val >= Config::Get()->GetParameterD("double_cluster_threshold") * _sum_wf->GetBaselineStdev(max(i_s-baseline_samps, baseline_samps/2))) {
-	  while(cluster_end + second_pulse_length < Config::Get()->GetParameterI("num_samps") - 1 &&_sum_wf->GetAmp(cluster_end + second_pulse_length) - min_val >= 
-		Config::Get()->GetParameterD("double_cluster_threshold") * _sum_wf->GetBaselineStdev(max(i_s-baseline_samps, baseline_samps/2))) second_pulse_length++;
-	}
-	if(second_pulse_length > Config::Get()->GetParameterI("double_cluster_width")) second_pulse = true; 
-	if (_sum_wf->GetAmp(cluster_end) <= 0){
-	  baseline_end = 0;
-	  temp_s = cluster_end;
-	  for(int i = 0 ; i < sample_size; i++, temp_s++) {
-	    if (temp_s > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
-	    baseline_end += _sum_wf->GetAmp(temp_s)/sample_size;
-	  }
-	  if (abs(baseline_end) < 1 * _sum_wf->GetBaselineStdev(cluster_end)) {i_s = cluster_end; cluster_end = temp_s; break; } // cluster_end = temp_s is buffer
-	}
+	      // Checking for pulse overlap (NEEDS WORK!!)
+	      int second_pulse_length = 0;
+	      if (_sum_wf->GetAmp(cluster_end) - min_val >= Config::Get()->GetParameterD("double_cluster_threshold") * _sum_wf->GetBaselineStdev(max(i_s-baseline_samps, baseline_samps/2))) {
+	        while(cluster_end + second_pulse_length < Config::Get()->GetParameterI("num_samps") - 1 &&_sum_wf->GetAmp(cluster_end + second_pulse_length) - min_val >= 
+		      Config::Get()->GetParameterD("double_cluster_threshold") * _sum_wf->GetBaselineStdev(max(i_s-baseline_samps, baseline_samps/2))) second_pulse_length++;
+	      }
+	      if(second_pulse_length > Config::Get()->GetParameterI("double_cluster_width")) second_pulse = true; 
+	      if (_sum_wf->GetAmp(cluster_end) <= 0){
+	        baseline_end = 0;
+	        temp_s = cluster_end;
+	        for(int i = 0 ; i < sample_size; i++, temp_s++) {
+	          if (temp_s > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
+	          baseline_end += _sum_wf->GetAmp(temp_s)/sample_size;
+	        }
+	        if (abs(baseline_end) < 1 * _sum_wf->GetBaselineStdev(cluster_end)) {i_s = cluster_end; cluster_end = temp_s; break; } // cluster_end = temp_s is buffer
+	      }
       }
       // Checking if each channel has a corresponding pulse in the cluster region
       for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-	if(_channels[i_ch]->GetBlSubWF()->Integrate(cluster_start, cluster_end) >= 1) pulse_match++;
+	      if(_channels[i_ch]->GetBlSubWF()->Integrate(cluster_start, cluster_end) >= 1) pulse_match++;
       }	
       // Setting all cluster parameters
       float integral = _sum_wf->Integrate(cluster_start, cluster_end);
       if (second_pulse) _cluster_overlap = true;
       if (pulse_match >=  Config::Get()->GetParameterI("num_chans") / 2 && integral > max_val 
-	  && cluster_end-cluster_start > Config::Get()->GetParameterI("cluster_width") && !oob) {
+	      && cluster_end-cluster_start > Config::Get()->GetParameterI("cluster_width") && !oob) {
         Cluster* newCluster = new Cluster();
         newCluster->SetStartSamp(cluster_start); newCluster->SetStartTime(cluster_start * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
         newCluster->SetPeakSamp(peak_time); newCluster->SetPeakTime(peak_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
@@ -275,26 +276,26 @@ void Event::FindClusters() {
         newCluster->SetEndSamp(cluster_end); newCluster->SetMinVal(min_val); newCluster->SetMaxVal(max_val); newCluster->SetHeight(_sum_wf->GetAmp(peak_time));
         newCluster->SetEndTime(cluster_end * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
         newCluster->SetIntegral(integral);
-	// Calculating fprompt values
-	vector<double> fprompts;
-	for(unsigned int i_fp = 0; i_fp < Config::Get()->GetParameterDvec("prompt_windows").size(); i_fp++){
-	  double fp = _sum_wf->Integrate(newCluster->GetStartTime(), newCluster->GetStartTime() + Config::Get()->GetParameterDvec("prompt_windows")[i_fp]);
-	  if(integral != 0) fprompts.push_back(fp / integral);
-	  else fprompts.push_back(0);
-	}
-	newCluster->SetFprompt(fprompts);
-	if(Config::Get()->GetParameterS("deconvolve") == "n") {
-	  if(fprompts[0] > Config::Get()->GetParameterD("S1_S2_threshold")) newCluster->SetS1(true);
-	  else newCluster->SetS1(false);
-	}
-	// Calculating asymmetry
-	double top_frac = 0;
-	for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-	  if(_channels[i_ch]->GetTop() == true) top_frac += _channels[i_ch]->GetBlSubWF()->Integrate(cluster_start, cluster_end);
-	}
-	if(integral != 0) newCluster->SetSymmetry(top_frac/integral);
-	else newCluster->SetSymmetry(0);
-	_clusters.push_back(newCluster);
+	      // Calculating fprompt values
+	      vector<double> fprompts;
+	      for(unsigned int i_fp = 0; i_fp < Config::Get()->GetParameterDvec("prompt_windows").size(); i_fp++){
+	        double fp = _sum_wf->Integrate(newCluster->GetStartTime(), newCluster->GetStartTime() + Config::Get()->GetParameterDvec("prompt_windows")[i_fp]);
+	        if(integral != 0) fprompts.push_back(fp / integral);
+	        else fprompts.push_back(0);
+	      }
+	      newCluster->SetFprompt(fprompts);
+	      if(Config::Get()->GetParameterS("deconvolve") == "n") {
+	        if(fprompts[0] > Config::Get()->GetParameterD("S1_S2_threshold")) newCluster->SetS1(true);
+	        else newCluster->SetS1(false);
+	      }
+	      // Calculating asymmetry
+	      double top_frac = 0;
+	      for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
+	        if(_channels[i_ch]->GetTop() == true) top_frac += _channels[i_ch]->GetBlSubWF()->Integrate(cluster_start, cluster_end);
+	      }
+	      if(integral != 0) newCluster->SetSymmetry(top_frac/integral);
+	      else newCluster->SetSymmetry(0);
+	      _clusters.push_back(newCluster);
         i_s = cluster_end;
       }
     }
@@ -304,24 +305,26 @@ void Event::FindClusters() {
 /*--------------------------------------------------------------------*/
 
 void Event::FindClusterPulses() {
+  // Finding pulses between cluster start and end for each channel
   for(unsigned int i_c = 0; i_c < _clusters.size(); i_c++) {
     _clusters[i_c]->ClearPulses();
     for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
       for(int i_s = _clusters[i_c]->GetStartSamp(); i_s < _clusters[i_c]->GetEndSamp(); i_s++) {
-	int pulse_time = i_s; int pulse_end = i_s;
-	if (_channels[i_ch]->GetDiffWF()->GetAmp(i_s) > (Config::Get()->GetParameterD("pulse_threshold") * _channels[i_ch]->GetBlSubWF()->GetBaselineStdev(i_s))) {
-	  if (_channels[i_ch]->GetBlSubWF()->GetAmp(i_s + 1) > _channels[i_ch]->GetBlSubWF()->GetAmp(i_s - 1)) {
-	    while (_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time+1) > _channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time-1)) pulse_time++;
-	  }
-	  else if (_channels[i_ch]->GetBlSubWF()->GetAmp(i_s + 1) < _channels[i_ch]->GetBlSubWF()->GetAmp(i_s-1)) {
-	    while (_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time+1) < _channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time-1)) pulse_time--;}
-	  while (_channels[i_ch]->GetDiffWF()->GetAmp(pulse_end) > 0) pulse_end++; //advancing until decreasing edge of the pulse
-	  i_s = pulse_end;
-	  Pulse* newPulse = new Pulse();
-	  newPulse->SetPeakSamp(pulse_time); newPulse->SetPeakTime(pulse_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
-	  newPulse->SetHeight(_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time));
-	  _clusters[i_c]->AddPulse(i_ch, newPulse);
-	}
+	      int pulse_time = i_s; int pulse_end = i_s;
+	      if (_channels[i_ch]->GetDiffWF()->GetAmp(i_s) > (Config::Get()->GetParameterD("pulse_threshold") * _channels[i_ch]->GetBlSubWF()->GetBaselineStdev(i_s))) {
+	        if (_channels[i_ch]->GetBlSubWF()->GetAmp(i_s + 1) > _channels[i_ch]->GetBlSubWF()->GetAmp(i_s - 1)) {
+	          while (_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time+1) > _channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time-1)) pulse_time++;
+	        }
+	        else if (_channels[i_ch]->GetBlSubWF()->GetAmp(i_s + 1) < _channels[i_ch]->GetBlSubWF()->GetAmp(i_s-1)) {
+	          while (_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time+1) < _channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time-1)) pulse_time--;
+          }
+	        while (_channels[i_ch]->GetDiffWF()->GetAmp(pulse_end) > 0) pulse_end++; //advancing until decreasing edge of the pulse
+	        i_s = pulse_end;
+	        Pulse* newPulse = new Pulse();
+	        newPulse->SetPeakSamp(pulse_time); newPulse->SetPeakTime(pulse_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
+	        newPulse->SetHeight(_channels[i_ch]->GetBlSubWF()->GetAmp(pulse_time));
+	        _clusters[i_c]->AddPulse(i_ch, newPulse);
+	      }
       }
     }
   }

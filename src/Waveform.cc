@@ -26,6 +26,8 @@ void Waveform::CalcBaseline(double threshold) {
   //Initializing first sample
   double avg = 0, nrolled = 0, stdev = 0;
   float minval = INT_MAX, maxval = INT_MIN;
+
+  // Calculates an average over the first sample_size/2 samples
   for(int i_roll = 0; i_roll <= sample_size/2; i_roll++) {
     avg += _amplitudes[i_roll];
     stdev += pow(_amplitudes[i_roll],2);
@@ -59,39 +61,43 @@ void Waveform::CalcBaseline(double threshold) {
       stdev -= pow(_amplitudes[used_samps[0]],2);
       nrolled--;
       if(_amplitudes[used_samps[0]] == maxval || _amplitudes[used_samps[0]] == minval) {
-	maxval = _amplitudes[used_samps[1]]; minval =_amplitudes[used_samps[1]];
-	for(unsigned int i = 1; i < used_samps.size(); i++) {
-	  if(_amplitudes[used_samps[i]] > maxval) maxval = _amplitudes[used_samps[i]];
-	  if(_amplitudes[used_samps[i]] < minval) minval = _amplitudes[used_samps[i]];
-	}
+	      maxval = _amplitudes[used_samps[1]]; minval =_amplitudes[used_samps[1]];
+	      for(unsigned int i = 1; i < used_samps.size(); i++) {
+	        if(_amplitudes[used_samps[i]] > maxval) maxval = _amplitudes[used_samps[i]];
+	        if(_amplitudes[used_samps[i]] < minval) minval = _amplitudes[used_samps[i]];
+	      }
       }
       used_samps.pop_front();
     }
+    // All other samples
     else {
       int newsamp = used_samps[sample_size-1]+1;
       int buff = 5;
-      // ignoring samples that exceed a certain threshold
+      // Ignoring samples that exceed a threshold * baseline_stdev, where the standard deviation is calculated from the 
+      // previous non-overlapping sample_size range
       if(abs(_amplitudes[newsamp + buff] - _baseline[i_s- sample_size/2]) > threshold * _baseline_stdev[i_s-sample_size/2]){
-	peak_start = newsamp;
-	if(_amplitudes[newsamp + buff] - _baseline[i_s- sample_size/2] > threshold * _baseline_stdev[i_s-sample_size/2]) { 
-	  while(true) {
-	    newsamp++;
-	    if (newsamp + buff > Config::Get()->GetParameterI("num_samps")) break;
-	    // End of pulse is fixed when waveform is below the baseline and the baseline over a given number of samples is within
-	    // one sigma of the rolling baseline
-	    if (_amplitudes[newsamp + buff] < _baseline[i_s-sample_size/2] ){
-	      double baseline_end = 0; int temp_s;
-	      temp_s = newsamp + buff;
-	      for(int i = 0 ; i < sample_size; i++, temp_s++) {
-		if (temp_s > Config::Get()->GetParameterI("num_samps")) break;
-		baseline_end += _amplitudes[temp_s]/sample_size;
+	      peak_start = newsamp;
+        // If positively exceeding threshold, continue until first sample is below baseline
+	      if(_amplitudes[newsamp + buff] - _baseline[i_s- sample_size/2] > threshold * _baseline_stdev[i_s-sample_size/2]) { 
+	        while(true) {
+	          newsamp++;
+	          if (newsamp + buff > Config::Get()->GetParameterI("num_samps")) break;
+	          // End of pulse is fixed when waveform is below the baseline and the baseline over a given number of samples is within
+	          // one sigma of the rolling baseline
+	          if (_amplitudes[newsamp + buff] < _baseline[i_s-sample_size/2] ){
+	            double baseline_end = 0; int temp_s;
+	            temp_s = newsamp + buff;
+	            for(int i = 0 ; i < sample_size; i++, temp_s++) {
+		            if (temp_s > Config::Get()->GetParameterI("num_samps")) break;
+		            baseline_end += _amplitudes[temp_s]/sample_size;
+	            }
+	            if (abs(baseline_end -  _baseline[i_s- sample_size/2]) < _baseline_stdev[i_s-sample_size/2]) break;
+	          }
+	        }
 	      }
-	      if (abs(baseline_end -  _baseline[i_s- sample_size/2]) < _baseline_stdev[i_s-sample_size/2]) break;
-	    }
-	  }
-	}
-	else if (_amplitudes[newsamp + buff] - _baseline[i_s-sample_size/2] < threshold * _baseline_stdev[i_s-sample_size/2]) {
-	  while(true) {
+        // If negatively exceeding threshold, continue until first sample is above baseline
+	      else if (_amplitudes[newsamp + buff] - _baseline[i_s-sample_size/2] < threshold * _baseline_stdev[i_s-sample_size/2]) {
+	        while(true) {
             newsamp++;
             if (newsamp + buff > Config::Get()->GetParameterI("num_samps")) break;
             // End of pulse is fixed when waveform is below the baseline and the baseline over a given number of samples is within
@@ -106,24 +112,24 @@ void Waveform::CalcBaseline(double threshold) {
               if (abs(baseline_end -  _baseline[i_s- sample_size/2]) < _baseline_stdev[i_s-sample_size/2]) break;
             }
           }
-	}
-	newsamp += buff;
-	peak_end = newsamp;
+	      }
+	      newsamp += buff;
+	      peak_end = newsamp;
       }
       if((i_s < peak_start || i_s > peak_end) && newsamp < Config::Get()->GetParameterI("num_samps")) {
-	avg = avg - _amplitudes[used_samps[0]] + _amplitudes[newsamp]; // subtracting first sample and adding new sample
-	stdev = stdev - pow(_amplitudes[used_samps[0]],2) + pow(_amplitudes[newsamp],2);
-	used_samps.push_back(newsamp); // updating used samples list
-	if(_amplitudes[newsamp] > maxval) maxval = _amplitudes[newsamp];
-	if(_amplitudes[newsamp] < minval) minval = _amplitudes[newsamp];
-	else if(_amplitudes[used_samps[0]] == maxval || _amplitudes[used_samps[0]] == minval) {
-	  maxval = _amplitudes[used_samps[1]]; minval = _amplitudes[used_samps[1]];
-	  for(int i = 1; i <= sample_size; i++) {
-	    if(_amplitudes[used_samps[i]] > maxval) maxval = _amplitudes[used_samps[i]];
-	    if(_amplitudes[used_samps[i]] < minval) minval = _amplitudes[used_samps[i]];
-	  }
-	}
-	used_samps.pop_front();
+	      avg = avg - _amplitudes[used_samps[0]] + _amplitudes[newsamp]; // subtracting first sample and adding new sample
+	      stdev = stdev - pow(_amplitudes[used_samps[0]],2) + pow(_amplitudes[newsamp],2);
+	      used_samps.push_back(newsamp); // updating used samples list
+	      if(_amplitudes[newsamp] > maxval) maxval = _amplitudes[newsamp];
+	      if(_amplitudes[newsamp] < minval) minval = _amplitudes[newsamp];
+	      else if(_amplitudes[used_samps[0]] == maxval || _amplitudes[used_samps[0]] == minval) {
+	        maxval = _amplitudes[used_samps[1]]; minval = _amplitudes[used_samps[1]];
+	        for(int i = 1; i <= sample_size; i++) {
+	          if(_amplitudes[used_samps[i]] > maxval) maxval = _amplitudes[used_samps[i]];
+	          if(_amplitudes[used_samps[i]] < minval) minval = _amplitudes[used_samps[i]];
+	        }
+	      }
+	      used_samps.pop_front();
       }
     }
     _baseline[i_s] = (float)(avg / nrolled);

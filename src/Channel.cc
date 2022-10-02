@@ -202,37 +202,39 @@ void Channel::FindPulses() {
       double slope = (_bl_sub_wf->GetAmp(half_samp) - _bl_sub_wf->GetAmp(half_samp - 1)) / (1e-3 / Config::Get()->GetParameterD("sampling_rate"));
       double intercept = _bl_sub_wf->GetAmp(half_samp) - (slope * half_samp * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
       half_time = (0.5 * _bl_sub_wf->GetAmp(peak_time) - intercept) / slope;
-      // finding the end of the pulse
+      // Finding the end of the pulse
       while(true) {
-	pulse_end++;
-	if (pulse_end > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
-	if(_bl_sub_wf->GetAmp(pulse_end) > max_val) {max_val = _bl_sub_wf->GetAmp(pulse_end);}
-	if(_bl_sub_wf->GetAmp(pulse_end) < min_val) {min_val = _bl_sub_wf->GetAmp(pulse_end);}
-	// End of pulse is fixed when waveform is below zero and the baseline over a given number of samples is within
-	// one sigma of the rolling baseline
-	if (_bl_sub_wf->GetAmp(pulse_end) <= 0){
-	  baseline_end = 0;
-	  temp_s = pulse_end;
-	  for(int i = 0 ; i < sample_size; i++, temp_s++) {
-	    if (temp_s > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
-	    baseline_end += _bl_sub_wf->GetAmp(temp_s)/sample_size;
-	  }
-	  if (abs(baseline_end) < _raw_wf->GetBaselineStdev(pulse_end)) break;
-	}
+	      pulse_end++;
+	      if (pulse_end > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
+	      if(_bl_sub_wf->GetAmp(pulse_end) > max_val) {max_val = _bl_sub_wf->GetAmp(pulse_end);}
+	      if(_bl_sub_wf->GetAmp(pulse_end) < min_val) {min_val = _bl_sub_wf->GetAmp(pulse_end);}
+	      // End of pulse is fixed when waveform is below zero and the baseline over a given number of samples is within
+	      // one sigma of the rolling baseline
+	      if (_bl_sub_wf->GetAmp(pulse_end) <= 0){
+	        baseline_end = 0;
+	        temp_s = pulse_end;
+	        for(int i = 0 ; i < sample_size; i++, temp_s++) {
+	          if (temp_s > Config::Get()->GetParameterI("num_samps")) {oob = true; break;}
+	          baseline_end += _bl_sub_wf->GetAmp(temp_s)/sample_size;
+	        }
+	        if (abs(baseline_end) < _raw_wf->GetBaselineStdev(pulse_end)) break;
+	      }
       }
-      // If pulse length exceeds minimum, sets all pulse parameters
+      // If pulse length and integral exceed minimum, sets all pulse parameters
       float integral = _bl_sub_wf->Integrate(pulse_start, pulse_end);
       if (integral > max_val && pulse_end-pulse_start > Config::Get()->GetParameterI("pulse_width") && !oob) {
-	Pulse* newPulse = new Pulse();
-	newPulse->SetStartSamp(pulse_start); newPulse->SetStartTime(pulse_start * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
-	newPulse->SetPeakSamp(peak_time); newPulse->SetPeakTime(peak_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
+	      Pulse* newPulse = new Pulse();
+	      newPulse->SetStartSamp(pulse_start); newPulse->SetStartTime(pulse_start * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
+	      newPulse->SetPeakSamp(peak_time); newPulse->SetPeakTime(peak_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
         newPulse->SetHalfTime(half_time);
-	newPulse->SetEndSamp(pulse_end); newPulse->SetMinVal(min_val); newPulse->SetMaxVal(max_val); newPulse->SetHeight(_bl_sub_wf->GetAmp(peak_time));
+	      newPulse->SetEndSamp(pulse_end); newPulse->SetMinVal(min_val); newPulse->SetMaxVal(max_val); newPulse->SetHeight(_bl_sub_wf->GetAmp(peak_time));
         newPulse->SetEndTime(pulse_end * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
         newPulse->SetIntegral(integral);
-	_pulses.push_back(newPulse);
-	i_s = pulse_end;
-	FindAfterPulses(newPulse, pulse_start, pulse_end); //finding after-pulses
+	      _pulses.push_back(newPulse);
+	      i_s = pulse_end;
+
+        // Finding all pulses between the start-time and end-time of the pulse
+	      FindAfterPulses(newPulse, pulse_start, pulse_end); 
       }
     }
   }
@@ -246,6 +248,7 @@ void Channel::FindAfterPulses(Pulse* p, int pulse_start, int pulse_end) {
   int counter = 0;
   for(int i_s = pulse_start; i_s < pulse_end; i_s++) {
     int afterpulse_time = i_s; int afterpulse_end = i_s;
+    // If derivative exceeds the threshold:
     if (_diff_wf->GetAmp(i_s) > (Config::Get()->GetParameterD("pulse_threshold") * _raw_wf->GetBaselineStdev(i_s))) { 
       //Finding peak time at nearest maximum
       if (_bl_sub_wf->GetAmp(i_s + 1) > _bl_sub_wf->GetAmp(i_s - 1)) {while (_bl_sub_wf->GetAmp(afterpulse_time+1) > _bl_sub_wf->GetAmp(afterpulse_time-1)) afterpulse_time++;}
@@ -255,10 +258,10 @@ void Channel::FindAfterPulses(Pulse* p, int pulse_start, int pulse_end) {
       counter++;
       // Setting after-pulse parameters and adding to afterpulse array (excluding the first pulse)
       if (counter > 1) {
-	Pulse* newPulse = new Pulse();
-	newPulse->SetPeakSamp(afterpulse_time); newPulse->SetPeakTime(afterpulse_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
-	newPulse->SetHeight(_bl_sub_wf->GetAmp(afterpulse_time));
-	p->AddAfterPulse(newPulse);
+	      Pulse* newPulse = new Pulse();
+	      newPulse->SetPeakSamp(afterpulse_time); newPulse->SetPeakTime(afterpulse_time * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
+	      newPulse->SetHeight(_bl_sub_wf->GetAmp(afterpulse_time));
+	      p->AddAfterPulse(newPulse);
       }
     }
   }
