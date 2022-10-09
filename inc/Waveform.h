@@ -23,17 +23,28 @@ using namespace std;
 class Waveform{
  public:
   Waveform(){
+
+    int num_samps = Config::Get()->GetParameterI("num_samps");
+    double sampling_rate = Config::Get()->GetParameterD("sampling_rate");
+
     _max = 0;
     _max_samp = 0;
     _min = 0;
     _min_samp = 0;
-    for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+    _samples.reserve(num_samps);
+    _times.reserve(num_samps);
+    _amplitudes.reserve(num_samps);
+    _baseline.reserve(num_samps);
+    _baseline_stdev.reserve(num_samps);
+    _baseline_range.reserve(num_samps);
+
+    for(int i_s = 0; i_s < num_samps; i_s++){
         _samples.push_back(i_s);
-        _times.push_back(i_s * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
-	_amplitudes.push_back(0);
-	_baseline.push_back(0);
-	_baseline_stdev.push_back(0);
-	_baseline_range.push_back(0);
+        _times.push_back(i_s * 1e-3 / sampling_rate);
+	      _amplitudes.push_back(0);
+	      _baseline.push_back(0);
+	      _baseline_stdev.push_back(0);
+	      _baseline_range.push_back(0);
     } 
   }
   ~Waveform() {;}
