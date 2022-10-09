@@ -21,6 +21,7 @@ using namespace std;
 
 void Waveform::CalcBaseline(double threshold) {
   int sample_size = Config::Get()->GetParameterI("baseline_samps");
+  int num_samps = Config::Get()->GetParameterI("num_samps");
   deque<int> used_samps; //array to hold samples used to calculate the baseline
 
   //Initializing first sample
@@ -43,10 +44,10 @@ void Waveform::CalcBaseline(double threshold) {
   
 
   //Now for the rest of the samples
-  int peak_start = Config::Get()->GetParameterI("num_samps");
+  int peak_start = num_samps;
   int peak_end = 0;
   // First sample_size/2 samples
-  for(int i_s = 1; i_s < Config::Get()->GetParameterI("num_samps"); i_s++) {
+  for(int i_s = 1; i_s < num_samps; i_s++) {
     if(i_s < sample_size/2) {
       avg += _amplitudes[used_samps.back()+1];
       stdev += pow(_amplitudes[used_samps.back()+1],2);
@@ -56,7 +57,7 @@ void Waveform::CalcBaseline(double threshold) {
       used_samps.push_back(used_samps.back()+1);
     }
     // Last sample_size/2 samples
-    else if(i_s > Config::Get()->GetParameterI("num_samps") - sample_size/2 -1) {
+    else if(i_s > num_samps - sample_size/2 -1) {
       avg -= _amplitudes[used_samps[0]];
       stdev -= pow(_amplitudes[used_samps[0]],2);
       nrolled--;
@@ -81,14 +82,14 @@ void Waveform::CalcBaseline(double threshold) {
 	      if(_amplitudes[newsamp + buff] - _baseline[i_s- sample_size/2] > threshold * _baseline_stdev[i_s-sample_size/2]) { 
 	        while(true) {
 	          newsamp++;
-	          if (newsamp + buff > Config::Get()->GetParameterI("num_samps")) break;
+	          if (newsamp + buff > num_samps) break;
 	          // End of pulse is fixed when waveform is below the baseline and the baseline over a given number of samples is within
 	          // one sigma of the rolling baseline
 	          if (_amplitudes[newsamp + buff] < _baseline[i_s-sample_size/2] ){
 	            double baseline_end = 0; int temp_s;
 	            temp_s = newsamp + buff;
 	            for(int i = 0 ; i < sample_size; i++, temp_s++) {
-		            if (temp_s > Config::Get()->GetParameterI("num_samps")) break;
+		            if (temp_s > num_samps) break;
 		            baseline_end += _amplitudes[temp_s]/sample_size;
 	            }
 	            if (abs(baseline_end -  _baseline[i_s- sample_size/2]) < _baseline_stdev[i_s-sample_size/2]) break;
@@ -99,14 +100,14 @@ void Waveform::CalcBaseline(double threshold) {
 	      else if (_amplitudes[newsamp + buff] - _baseline[i_s-sample_size/2] < threshold * _baseline_stdev[i_s-sample_size/2]) {
 	        while(true) {
             newsamp++;
-            if (newsamp + buff > Config::Get()->GetParameterI("num_samps")) break;
+            if (newsamp + buff > num_samps) break;
             // End of pulse is fixed when waveform is below the baseline and the baseline over a given number of samples is within
             // one sigma of the rolling baseline
             if (_amplitudes[newsamp + buff] > _baseline[i_s-sample_size/2] ){
               double baseline_end = 0; int temp_s;
               temp_s = newsamp + buff;
               for(int i = 0 ; i < sample_size; i++, temp_s++) {
-                if (temp_s > Config::Get()->GetParameterI("num_samps")) break;
+                if (temp_s > num_samps) break;
                 baseline_end += _amplitudes[temp_s]/sample_size;
               }
               if (abs(baseline_end -  _baseline[i_s- sample_size/2]) < _baseline_stdev[i_s-sample_size/2]) break;
@@ -116,7 +117,7 @@ void Waveform::CalcBaseline(double threshold) {
 	      newsamp += buff;
 	      peak_end = newsamp;
       }
-      if((i_s < peak_start || i_s > peak_end) && newsamp < Config::Get()->GetParameterI("num_samps")) {
+      if((i_s < peak_start || i_s > peak_end) && newsamp < num_samps) {
 	      avg = avg - _amplitudes[used_samps[0]] + _amplitudes[newsamp]; // subtracting first sample and adding new sample
 	      stdev = stdev - pow(_amplitudes[used_samps[0]],2) + pow(_amplitudes[newsamp],2);
 	      used_samps.push_back(newsamp); // updating used samples list
