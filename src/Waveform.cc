@@ -145,8 +145,9 @@ void Waveform::CalcBaseline(double threshold) {
 
 Waveform* Waveform::SubtractBaseline(){
   Waveform* subtracted_wf = new Waveform();
+  int num_samps = Config::Get()->GetParameterI("num_samps");
   //if(_baseline[0] == 0) CalcBaseline();
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+  for(int i_s = 0; i_s < num_samps; i_s++){
     subtracted_wf->SetAmp(i_s, _amplitudes[i_s] -_baseline[i_s]);
   }
   return subtracted_wf;
@@ -183,7 +184,8 @@ double Waveform::Integrate(double t0, double t1) {
 void Waveform::CalcExtrema(){
   _max = INT_MIN;
   _min = INT_MAX;
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+  int num_samps = Config::Get()->GetParameterI("num_samps");
+  for(int i_s = 0; i_s < num_samps; i_s++){
     if(_amplitudes[i_s] > _max){
       _max = _amplitudes[i_s];
       _max_samp = i_s;
@@ -201,8 +203,9 @@ void Waveform::CalcExtrema(){
 
 Waveform* Waveform::CalcRollingIntegral(){
   Waveform* roll_int = new Waveform();
+  int num_samps = Config::Get()->GetParameterI("num_samps");
   roll_int->SetAmp(0,0);
-  for(int i_s = 1; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+  for(int i_s = 1; i_s < num_samps; i_s++){
     roll_int->SetAmp(i_s, _amplitudes[i_s] + roll_int->GetAmp(i_s-1));
   }
   return roll_int;
@@ -216,10 +219,12 @@ Waveform* Waveform::LowPassFilter(){
   Waveform* filtered = new Waveform();
   double cutoff = Config::Get()->GetParameterD("cutoff_freq_low");
   double RC = 1/ (2 * 3.1415 * cutoff);
-  double alpha = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
+  double sampling_rate = Config::Get()->GetParameterD("sampling_rate");
+  int num_samps = Config::Get()->GetParameterI("num_samps");
+  double alpha = (1e-3 /  sampling_rate) / (RC + 1e-3 /  sampling_rate);
   // double beta = exp(-cutoff * 1e-3 / Config::Get()->GetParameterD("sampling_rate"));
   filtered->SetAmp(0, _amplitudes[0]);
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps")-1; i_s++){
+  for(int i_s = 0; i_s < num_samps-1; i_s++){
     filtered->SetAmp(i_s + 1, (1-alpha) * filtered->GetAmp(i_s) + alpha * _amplitudes[i_s]);  
   }
   return filtered;
@@ -233,8 +238,9 @@ Waveform* Waveform::HighPassFilter(){
   double cutoff = Config::Get()->GetParameterD("cutoff_freq_high");
   double RC = 1/ (2 * 3.1415 * cutoff);
   double alpha = RC / (RC + (1e-3 /  Config::Get()->GetParameterD("sampling_rate")));
+  int num_samps = Config::Get()->GetParameterI("num_samps");
   filtered->SetAmp(0, _amplitudes[0]);
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps")-1; i_s++){
+  for(int i_s = 0; i_s < num_samps-1; i_s++){
     filtered->SetAmp(i_s + 1, alpha * filtered->GetAmp(i_s) + alpha * (_amplitudes[i_s + 1] - _amplitudes[i_s]));
   }
   return filtered;

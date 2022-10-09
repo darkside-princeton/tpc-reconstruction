@@ -22,8 +22,9 @@ using namespace std;
 
 void Channel::SetRawWF(Waveform *wf) {
   _raw_wf = wf;
+  int num_samps = Config::Get()->GetParameterI("num_samps");
   if(Config::Get()->GetParameterS("polarity") == "neg") {
-    for(int i_s = 0 ; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+    for(int i_s = 0 ; i_s < num_samps; i_s++){
       _raw_wf->SetAmp(i_s, _raw_wf->GetAmp(i_s) * -1);
     }
   }
@@ -67,21 +68,25 @@ void Channel::ProcessNoise() {
 
   // Determining the total hits as a function of threshold and time over threshold
   int peak_start, peak_end;
+  int num_samps = Config::Get()->GetParameterI("num_samps");
+  double sampling_rate = Config::Get()->GetParameterD("sampling_rate");
+  int nevents = Config::Get()->GetParameterI("nevents");
+
   for(int i_t = 0; i_t <  Output::Get()->gHitsThreshold[_ch_id]->GetN(); i_t++) {
-    for(int i_s = 0 ; i_s < Config::Get()->GetParameterI("num_samps"); i_s++){
+    for(int i_s = 0 ; i_s < num_samps; i_s++){
       if(_bl_sub_wf->GetAmp(i_s) > Output::Get()->gHitsThreshold[_ch_id]->GetX()[i_t] * _raw_wf->GetBaselineStdev(i_s)) {
 	Output::Get()->gHitsThreshold[_ch_id]->GetY()[i_t] +=  
-	  1/(Config::Get()->GetParameterI("nevents") * Config::Get()->GetParameterI("num_samps") * 1e-3/ Config::Get()->GetParameterD("sampling_rate"));
+	  1/(nevents * num_samps * 1e-3/ sampling_rate);
 	peak_start = i_s;
 	peak_end = i_s;
-	while(_bl_sub_wf->GetAmp(peak_end) > Output::Get()->gHitsThreshold[_ch_id]->GetX()[i_t] * _raw_wf->GetBaselineStdev(peak_end) && peak_end < Config::Get()->GetParameterI("num_samps")) 
+	while(_bl_sub_wf->GetAmp(peak_end) > Output::Get()->gHitsThreshold[_ch_id]->GetX()[i_t] * _raw_wf->GetBaselineStdev(peak_end) && peak_end < num_samps) 
 	  peak_end++;
 	i_s = peak_end;
 	if(Output::Get()->gHitsThreshold[_ch_id]->GetX()[i_t] == 1) {
 	  for(int i_ti = 0; i_ti < Output::Get()->gHitsToT[_ch_id]->GetN();i_ti++){
 	    if(peak_end - peak_start > Output::Get()->gHitsToT[_ch_id]->GetX()[i_ti])
 	      Output::Get()->gHitsToT[_ch_id]->GetY()[i_ti] += 
-		1/(Config::Get()->GetParameterI("nevents") * Config::Get()->GetParameterI("num_samps") * 1e-3/ Config::Get()->GetParameterD("sampling_rate"));
+		1/(nevents * num_samps * 1e-3/ sampling_rate);
 	  }
 	}
       }
@@ -105,10 +110,13 @@ void Channel::SetWaveforms() {
   double cutoff = Config::Get()->GetParameterD("cutoff_freq_low");
   double RC = 1/ (2 * 3.1415 * cutoff);
   double alpha = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
+  int num_samps = Config::Get()->GetParameterI("num_samps");
+  int derivative_offset = Config::Get()->GetParameterI("derivative_offset");
+  
   _filtered_wf_low->SetAmp(0, _bl_sub_wf->GetAmp(0));
 
   _diff_wf = new Waveform();
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++) {
+  for(int i_s = 0; i_s < num_samps; i_s++) {
     
     // Extrema for raw waveform
     if(_raw_wf->GetAmp(i_s) > max_val_raw){
@@ -134,16 +142,16 @@ void Channel::SetWaveforms() {
     _total_integral += _bl_sub_wf->GetAmp(i_s);
   
     // Calculating rolling integral
-    int_samp = min(i_s + 1, Config::Get()->GetParameterI("num_samps")-1);
+    int_samp = min(i_s + 1, num_samps-1);
     _integral_wf->SetAmp(int_samp , _bl_sub_wf->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
 
     // Calculating filtered waveform
-    filt_samp = min(i_s, Config::Get()->GetParameterI("num_samps")-2);
+    filt_samp = min(i_s, num_samps-2);
     _filtered_wf_low->SetAmp(filt_samp + 1, (1-alpha) * _filtered_wf_low->GetAmp(filt_samp) + alpha * _bl_sub_wf->GetAmp(filt_samp ));  
 
     // Calculating derivative waveform
-    if(i_s > Config::Get()->GetParameterI("derivative_offset")) {
-      _diff_wf->SetAmp(i_s,_filtered_wf_low->GetAmp(i_s) - _filtered_wf_low->GetAmp(i_s-Config::Get()->GetParameterI("derivative_offset")));
+    if(i_s > derivative_offset) {
+      _diff_wf->SetAmp(i_s,_filtered_wf_low->GetAmp(i_s) - _filtered_wf_low->GetAmp(i_s-derivative_offset));
     }
 
   }
@@ -162,7 +170,9 @@ void Channel::Normalize() {
     _raw_wf->CalcBaseline();
     _bl_sub_wf = _raw_wf->SubtractBaseline();
   }
-  for(int i_s = 0; i_s < Config::Get()->GetParameterI("num_samps"); i_s++) {
+
+  int num_samps = Config::Get()->GetParameterI("num_samps");
+  for(int i_s = 0; i_s < num_samps; i_s++) {
     _bl_sub_wf->SetAmp(i_s, _bl_sub_wf->GetAmp(i_s) / _gain);
     if(_integral_wf != NULL) _integral_wf->SetAmp(i_s, _integral_wf->GetAmp(i_s) / _gain);
     if(_filtered_wf_low != NULL) _filtered_wf_low->SetAmp(i_s, _filtered_wf_low->GetAmp(i_s)/ _gain);
@@ -174,7 +184,7 @@ void Channel::Normalize() {
   }
   _bl_sub_wf->CalcBaseline();
   _bl_sub_wf->CalcExtrema();
-  _total_integral = _bl_sub_wf->Integrate(0, Config::Get()->GetParameterI("num_samps"));
+  _total_integral = _bl_sub_wf->Integrate(0, num_samps);
 
   _normalized = true;
 }
