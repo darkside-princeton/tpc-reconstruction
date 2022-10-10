@@ -24,7 +24,34 @@ void Waveform::CalcBaseline(double threshold) {
   int num_samps = Config::Get()->GetParameterI("num_samps");
   deque<int> used_samps; //array to hold samples used to calculate the baseline
 
-  if (Config::Get()->GetParameterS("constant_baseline") == "n") {
+
+  if (Config::Get()->GetParameterS("constant_baseline") == "y") {
+  
+    //Initializing first sample
+    double avg = 0, nrolled = 0, stdev = 0;
+    float minval = INT_MAX, maxval = INT_MIN;
+  
+     // Calculates an average over the first sample_size samples
+    for(int i_roll = 0; i_roll <= sample_size; i_roll++) {
+      avg += _amplitudes[i_roll];
+      stdev += pow(_amplitudes[i_roll],2);
+      if (_amplitudes[i_roll] > maxval) maxval = _amplitudes[i_roll];
+      if (_amplitudes[i_roll] < minval) minval = _amplitudes[i_roll]; 
+      nrolled++;
+      used_samps.push_back(i_roll);
+    }
+
+    fill(_baseline.begin(), _baseline.end(), (float)(avg / nrolled));
+    fill(_baseline_stdev.begin(), _baseline_stdev.end(), (float)(sqrt(stdev / nrolled - pow(_baseline[0],2))));
+    fill(_baseline_range.begin(), _baseline_range.end(), (float)(maxval - minval));
+    //_baseline[0] = (float)(avg / nrolled);
+    //_baseline_stdev[0] = (float)(sqrt(stdev / nrolled - pow(_baseline[0],2)));
+    //_baseline_range[0] = (float)(maxval - minval);
+  
+  }
+
+
+  else if (Config::Get()->GetParameterS("constant_baseline") == "n") {
 
     //Initializing first sample
     double avg = 0, nrolled = 0, stdev = 0;
