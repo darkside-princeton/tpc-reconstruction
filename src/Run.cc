@@ -209,10 +209,6 @@ Waveform* Run::ReadBinary(int channel, bool header){
   _ifiles[channel]->read((char*) file_header, header*24);
   _ifiles[channel]->read((char*) waveform, Ns*2);
 
-  for(int is = 0; is < 6; is++) {
-    cout << file_header[is] << endl;
-  }
-
   for(int is=0; is<Ns; is++){  
     wf->SetAmp(is, waveform[is]);
   }
