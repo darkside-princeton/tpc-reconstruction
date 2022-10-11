@@ -219,7 +219,7 @@ Waveform* Run::ReadBinary(int channel, bool header){
 
   delete[] eventBinary;
   delete[] waveform;
-  delete[] header;
+  delete[] file_header;
 
   return wf;
 }
