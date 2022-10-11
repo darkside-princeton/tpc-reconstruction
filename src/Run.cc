@@ -41,7 +41,7 @@ int Run::ProcessSiPM() {
     if(i_ev % 500 == 499) cout << "event" << i_ev << endl;
     Event* anEvent = new Event(i_ev);
     for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-      Waveform* wf = ReadBinary(i_ch, false);
+      Waveform* wf = ReadBinary(i_ch, Config::Get()->GetParameterS("header") == "y");
       anEvent->SetRawWF(i_ch, wf);
     }
     anEvent->ProcessEvent();
@@ -139,7 +139,7 @@ void Run::ProcessTPC() {
     if(i_ev % 500 == 0) cout << "event" << i_ev << endl;
     Event* anEvent = new Event(i_ev);
     for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-      Waveform* wf = ReadBinary(i_ch, false);
+      Waveform* wf = ReadBinary(i_ch, Config::Get()->GetParameterS("header") == "y");
       anEvent->SetRawWF(i_ch, wf);
     }
     anEvent->ProcessEvent();
@@ -181,7 +181,7 @@ void Run::ProcessNoise() {
     if(i_ev % 500 == 0) cout << "event" << i_ev << endl;
     Event* anEvent = new Event(i_ev);
     for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-      Waveform* wf = ReadBinary(i_ch, false);
+      Waveform* wf = ReadBinary(i_ch, Config::Get()->GetParameterS("header") == "y");
       anEvent->SetRawWF(i_ch, wf);
     }
     anEvent->ProcessEventNoise();
@@ -201,18 +201,25 @@ void Run::ProcessNoise() {
 
 Waveform* Run::ReadBinary(int channel, bool header){
   int Ns = Config::Get()->GetParameterI("num_samps");
-  char* eventBinary = new char[Ns*2];
+  char* eventBinary = new char[Ns*2+header*24];
   short int* waveform = new short int[Ns];
+  int* header = new int[6];
   Waveform* wf = new Waveform();
   
+  _ifiles[channel]->read((char*) header, header*24);
   _ifiles[channel]->read((char*) waveform, Ns*2);
-  
+
+  for(int is = 0; is < 6; is++) {
+    cout << header[is] << endl;
+  }
+
   for(int is=0; is<Ns; is++){  
     wf->SetAmp(is, waveform[is]);
   }
 
   delete[] eventBinary;
   delete[] waveform;
+  delete[] header;
 
   return wf;
 }
@@ -310,7 +317,7 @@ void Run::EventViewer() {
   string input;
   int input_evID = 0;
   int skip_ID = 0;
-  bool header = false; 
+  bool header = (Config::Get()->GetParameterS("header") == "y"); 
   double min_range_x = 0; double max_range_x = 0;
   double min_range_y = 0; double max_range_y = 0;
 
@@ -325,7 +332,7 @@ void Run::EventViewer() {
   
   //Set up Event
   for(int i_ch = 0; i_ch < Config::Get()->GetParameterI("num_chans"); i_ch++){
-    Waveform* wf = ReadBinary(i_ch, false);
+    Waveform* wf = ReadBinary(i_ch, header);
     anEvent->SetRawWF(i_ch, wf);
   }
   anEvent->ProcessEvent();
