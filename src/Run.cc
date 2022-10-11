@@ -203,14 +203,14 @@ Waveform* Run::ReadBinary(int channel, bool header){
   int Ns = Config::Get()->GetParameterI("num_samps");
   char* eventBinary = new char[Ns*2+header*24];
   short int* waveform = new short int[Ns];
-  int* header = new int[6];
+  int* file_header = new int[6];
   Waveform* wf = new Waveform();
   
-  _ifiles[channel]->read((char*) header, header*24);
+  _ifiles[channel]->read((char*) file_header, header*24);
   _ifiles[channel]->read((char*) waveform, Ns*2);
 
   for(int is = 0; is < 6; is++) {
-    cout << header[is] << endl;
+    cout << file_header[is] << endl;
   }
 
   for(int is=0; is<Ns; is++){  
