@@ -108,14 +108,14 @@ void Channel::SetWaveforms() {
   _integral_wf->SetAmp(0,0); int int_samp = 0;
   _filtered_wf_low = new Waveform; int filt_samp = 0;
   double cutoff_low = Config::Get()->GetParameterD("cutoff_freq_low");
-  double RC_low = 1/ (2 * 3.1415 * cutoff);
+  double RC_low = 1/ (2 * 3.1415 * cutoff_low);
   double alpha_low = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC_low + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
   int num_samps = Config::Get()->GetParameterI("num_samps");
   int derivative_offset = Config::Get()->GetParameterI("derivative_offset");
 
   _filtered_wf_high = new Waveform;
   double cutoff_high = Config::Get()->GetParameterD("cutoff_freq_high");
-  double RC_high = 1/ (2 * 3.1415 * cutoff);
+  double RC_high = 1/ (2 * 3.1415 * cutoff_high);
   double alpha_high = RC_high / (RC_high + (1e-3 /  Config::Get()->GetParameterD("sampling_rate")));
   
   _filtered_wf_low->SetAmp(0, _bl_sub_wf->GetAmp(0));
