@@ -107,13 +107,19 @@ void Channel::SetWaveforms() {
   _integral_wf = new Waveform();
   _integral_wf->SetAmp(0,0); int int_samp = 0;
   _filtered_wf_low = new Waveform; int filt_samp = 0;
-  double cutoff = Config::Get()->GetParameterD("cutoff_freq_low");
-  double RC = 1/ (2 * 3.1415 * cutoff);
-  double alpha = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
+  double cutoff_low = Config::Get()->GetParameterD("cutoff_freq_low");
+  double RC_low = 1/ (2 * 3.1415 * cutoff);
+  double alpha_low = (1e-3 /  Config::Get()->GetParameterD("sampling_rate")) / (RC_low + 1e-3 /  Config::Get()->GetParameterD("sampling_rate"));
   int num_samps = Config::Get()->GetParameterI("num_samps");
   int derivative_offset = Config::Get()->GetParameterI("derivative_offset");
+
+  _filtered_wf_high = new Waveform;
+  double cutoff_high = Config::Get()->GetParameterD("cutoff_freq_high");
+  double RC_high = 1/ (2 * 3.1415 * cutoff);
+  double alpha_high = RC_high / (RC_high + (1e-3 /  Config::Get()->GetParameterD("sampling_rate")));
   
   _filtered_wf_low->SetAmp(0, _bl_sub_wf->GetAmp(0));
+  _filtered_wf_high->SetAmp(0, _bl_sub_wf->GetAmp(0));
 
   _diff_wf = new Waveform();
   for(int i_s = 0; i_s < num_samps; i_s++) {
@@ -145,9 +151,12 @@ void Channel::SetWaveforms() {
     int_samp = min(i_s + 1, num_samps-1);
     _integral_wf->SetAmp(int_samp , _bl_sub_wf->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
 
-    // Calculating filtered waveform
+    // Calculating low-pass filtered waveform
     filt_samp = min(i_s, num_samps-2);
-    _filtered_wf_low->SetAmp(filt_samp + 1, (1-alpha) * _filtered_wf_low->GetAmp(filt_samp) + alpha * _bl_sub_wf->GetAmp(filt_samp ));  
+    _filtered_wf_low->SetAmp(filt_samp + 1, (1-alpha_low) * _filtered_wf_low->GetAmp(filt_samp) + alpha_low * _bl_sub_wf->GetAmp(filt_samp ));  
+
+    // Calculating high-pass filtered waveform
+    _filtered_wf_high->SetAmp(filt_samp + 1, alpha_high * _filtered_wf_high->GetAmp(i_s) + alpha_high * (_bl_sub_wf->GetAmp(filt_samp  + 1) - _bl_sub_wf->GetAmp(filt_samp )));
 
     // Calculating derivative waveform
     if(i_s > derivative_offset) {
