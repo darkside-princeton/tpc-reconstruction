@@ -156,11 +156,11 @@ void Channel::SetWaveforms() {
     _filtered_wf_low->SetAmp(filt_samp + 1, (1-alpha_low) * _filtered_wf_low->GetAmp(filt_samp) + alpha_low * _bl_sub_wf->GetAmp(filt_samp ));  
 
     // Calculating high-pass filtered waveform
-    _filtered_wf_high->SetAmp(filt_samp + 1, alpha_high * _filtered_wf_high->GetAmp(i_s) + alpha_high * (_bl_sub_wf->GetAmp(filt_samp  + 1) - _bl_sub_wf->GetAmp(filt_samp )));
+    _filtered_wf_high->SetAmp(filt_samp + 1, alpha_high * _filtered_wf_high->GetAmp(i_s) + alpha_high * (_bl_sub_wf->GetAmp(filt_samp  + 1) - _bl_sub_wf->GetAmp(filt_samp)));
 
     // Calculating rolling integral
     int_samp = min(i_s + 1, num_samps-1);
-    _integral_wf->SetAmp(int_samp , _filtered_wf_high->GetAmp(int_samp ) + _filtered_wf_high->GetAmp(int_samp -1));
+    _integral_wf->SetAmp(int_samp , _filtered_wf_high->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
 
     // Calculating derivative waveform
     if(i_s > derivative_offset) {
