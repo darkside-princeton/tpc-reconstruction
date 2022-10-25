@@ -449,20 +449,20 @@ void Channel::PlotHPFilter(double min_x, double max_x, double min_y, double max_
   gPad->Update();
 
   //Plotting high-pass filtered wf 2 
-  TGraph *filter_high2 = new TGraph(Config::Get()->GetParameterI("num_samps"),&_raw_wf->GetTimes()[0], &_filtered_wf_high2->GetAmp()[0]);                                                         
-  filter_high2->GetXaxis()->SetRangeUser(min_x,max_x);
-  if (min_y != 0 || max_y != 0) filter_high2->GetYaxis()->SetRangeUser(min_y, max_y);
-  filter_high2->SetLineColor(9);
-  filter_high2->Draw();
-  gPad->Update();
+  //TGraph *filter_high2 = new TGraph(Config::Get()->GetParameterI("num_samps"),&_raw_wf->GetTimes()[0], &_filtered_wf_high2->GetAmp()[0]);                                                         
+  //filter_high2->GetXaxis()->SetRangeUser(min_x,max_x);
+  //if (min_y != 0 || max_y != 0) filter_high2->GetYaxis()->SetRangeUser(min_y, max_y);
+  //filter_high2->SetLineColor(9);
+  //filter_high2->Draw();
+  //gPad->Update();
 
   //Plotting high-pass filtered wf 3                                                                                                                                                              
-  TGraph *filter_high3 = new TGraph(Config::Get()->GetParameterI("num_samps"),&_raw_wf->GetTimes()[0], &_filtered_wf_high3->GetAmp()[0]);
-  filter_high3->GetXaxis()->SetRangeUser(min_x,max_x);
-  if (min_y != 0 || max_y != 0) filter_high3->GetYaxis()->SetRangeUser(min_y, max_y);
-  filter_high3->SetLineColor(93);
-  filter_high3->Draw();                                                                                                                                                                      
-  gPad->Update();
+  //TGraph *filter_high3 = new TGraph(Config::Get()->GetParameterI("num_samps"),&_raw_wf->GetTimes()[0], &_filtered_wf_high3->GetAmp()[0]);
+  //filter_high3->GetXaxis()->SetRangeUser(min_x,max_x);
+  //if (min_y != 0 || max_y != 0) filter_high3->GetYaxis()->SetRangeUser(min_y, max_y);
+  //filter_high3->SetLineColor(93);
+  //filter_high3->Draw();                                                                                                                                                                      
+  //gPad->Update();
 }
 
 /*--------------------------------------------------------------------*/
