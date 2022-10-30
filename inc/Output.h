@@ -81,6 +81,7 @@ class Output{
   vector<vector<double> >          max_val;
   vector<vector<double> >          min_val;
   vector<vector<double> >          height;
+  vector<vector<double> >          filtered_height;
   vector<vector<double> >          peak_time;
   vector<vector<double> >          half_time;
   vector<vector<double> >          filtered_integral;

@@ -27,6 +27,7 @@ class Pulse{
     _end_time = -1;
     _integral = -1;
     _height = -1;
+    _filtered_height = -1;
     _max_val = -1;
     _min_val = -1;
     _peak_time = -1;
@@ -45,6 +46,7 @@ class Pulse{
   double GetMaxVal()         {return _max_val;}
   double GetMinVal()         {return _min_val;}
   double GetHeight()         {return _height;}
+  double GetFilteredHeight() {return _filtered_height;}
   double GetPeakTime()       {return _peak_time;}
   int    GetPeakSamp()       {return _peak_samp;}
   double GetHalfTime()       {return _half_time;}
@@ -64,6 +66,7 @@ class Pulse{
   void SetMaxVal(double max_val)                 {_max_val = max_val;}
   void SetMinVal(double min_val)                 {_min_val = min_val;}
   void SetHeight(double height)                  {_height = height;}
+  void SetFilteredHeight(double height)          {_filtered_height = height;}
   void SetPeakTime(double peak_time)             {_peak_time = peak_time;}
   void SetPeakSamp(int peak_samp)                {_peak_samp = peak_samp;}
   void SetHalfTime(double half_time)             {_half_time = half_time;}
@@ -74,7 +77,7 @@ class Pulse{
 
   void Print(){
     cout << "start_time = " << _start_time << " , end_time = " << _end_samp * 1e-3 / Config::Get()->GetParameterD("sampling_rate") << 
-" , max_val = " << _max_val << " , min_val = " << _min_val << " , integral = " << _integral << " , height = " << _height << " , half_time = " << _half_time << endl;
+" , max_val = " << _max_val << " , min_val = " << _min_val << " , integral = " << _integral << " , height = " << _height <<  " , filtered height = " <<  _filtered_height << " , half_time = " << _half_time << endl;
     for(unsigned int i = 0; i < _after_pulses.size(); i++) {
       cout << "     AfterPulse " << i << ": ";
       cout << "start_time = " << _after_pulses[i]->GetStartTime() << " , end_time = " << _after_pulses[i]->GetEndTime() << " , peak_time = " << _after_pulses[i]->GetPeakTime() 
@@ -97,6 +100,7 @@ class Pulse{
   double _max_val;
   double _min_val;
   double _height;
+  double _filtered_height;
   int _nafter_pulses;
   double _peak_time;
   int _peak_samp;

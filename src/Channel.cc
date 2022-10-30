@@ -148,8 +148,8 @@ void Channel::SetWaveforms() {
     _total_integral += _bl_sub_wf->GetAmp(i_s);
   
     // Calculating rolling integral
-    //int_samp = min(i_s + 1, num_samps-1);
-    //_integral_wf->SetAmp(int_samp , _bl_sub_wf->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
+    int_samp = min(i_s + 1, num_samps-1);
+    _integral_wf->SetAmp(int_samp , _bl_sub_wf->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
 
     // Calculating low-pass filtered waveform
     filt_samp = min(i_s, num_samps-2);
@@ -159,8 +159,8 @@ void Channel::SetWaveforms() {
     _filtered_wf_high->SetAmp(filt_samp + 1, alpha_high * _filtered_wf_high->GetAmp(i_s) + alpha_high * (_bl_sub_wf->GetAmp(filt_samp  + 1) - _bl_sub_wf->GetAmp(filt_samp)));
 
     // Calculating rolling integral
-    int_samp = min(i_s + 1, num_samps-1);
-    _integral_wf->SetAmp(int_samp , _filtered_wf_high->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
+   // int_samp = min(i_s + 1, num_samps-1);
+    //_integral_wf->SetAmp(int_samp , _filtered_wf_high->GetAmp(int_samp ) + _integral_wf->GetAmp(int_samp -1));
 
     // Calculating derivative waveform
     if(i_s > derivative_offset) {
@@ -213,7 +213,7 @@ void Channel::FindPulses() {
 
   for(int i_s = 0; i_s < num_samps; i_s++) {
     //Finding Main Pulse
-    int pulse_start = i_s; int pulse_end = i_s; int peak_time = i_s;
+    int pulse_start = i_s; int pulse_end = i_s; int peak_time = i_s; int peak_time_filt = i_s;
     int half_samp;
     double half_time;
     double baseline_end;
@@ -229,6 +229,11 @@ void Channel::FindPulses() {
       double slope = (_bl_sub_wf->GetAmp(half_samp) - _bl_sub_wf->GetAmp(half_samp - 1)) / (1e-3 / sampling_rate);
       double intercept = _bl_sub_wf->GetAmp(half_samp) - (slope * half_samp * 1e-3 / sampling_rate);
       half_time = (0.5 * _bl_sub_wf->GetAmp(peak_time) - intercept) / slope;
+
+      // Repeating on the filtered waveform
+      while (_filtered_wf_low->GetAmp(peak_time_filt+1) > _filtered_wf_low->GetAmp(peak_time_filt)) peak_time_filt++
+
+
       // Finding the end of the pulse
       while(true) {
 	      pulse_end++;
@@ -255,6 +260,7 @@ void Channel::FindPulses() {
 	      newPulse->SetPeakSamp(peak_time); newPulse->SetPeakTime(peak_time * 1e-3 / sampling_rate);
         newPulse->SetHalfTime(half_time);
 	      newPulse->SetEndSamp(pulse_end); newPulse->SetMinVal(min_val); newPulse->SetMaxVal(max_val); newPulse->SetHeight(_bl_sub_wf->GetAmp(peak_time));
+        newPulse->SetFilteredHeight(_filtered_wf_low->GetAmp(peak_time_filt));
         newPulse->SetEndTime(pulse_end * 1e-3 / sampling_rate);
         newPulse->SetIntegral(integral);
 	      _pulses.push_back(newPulse);

@@ -81,6 +81,7 @@ void Event::PulseOutput() {
     Output::Get()->max_val[i_ch].clear();
     Output::Get()->min_val[i_ch].clear();
     Output::Get()->height[i_ch].clear();
+    Output::Get()->filtered_height[i_ch].clear();
     Output::Get()->peak_time[i_ch].clear();
     Output::Get()->half_time[i_ch].clear();
     Output::Get()->nafterpulses[i_ch].clear();
@@ -96,6 +97,7 @@ void Event::PulseOutput() {
       Output::Get()->max_val[i_ch].push_back(pulses[i]->GetMaxVal());
       Output::Get()->min_val[i_ch].push_back(pulses[i]->GetMinVal());
       Output::Get()->height[i_ch].push_back(pulses[i]->GetHeight());
+      Output::Get()->filtered_height[i_ch].push_back(pulses[i]->GetFilteredHeight());
       Output::Get()->peak_time[i_ch].push_back(pulses[i]->GetPeakTime());
       Output::Get()->half_time[i_ch].push_back(pulses[i]->GetHalfTime());
       Output::Get()->nafterpulses[i_ch].push_back(pulses[i]->GetNAfterPulses());
