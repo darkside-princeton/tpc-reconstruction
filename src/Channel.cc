@@ -231,7 +231,7 @@ void Channel::FindPulses() {
       half_time = (0.5 * _bl_sub_wf->GetAmp(peak_time) - intercept) / slope;
 
       // Repeating on the filtered waveform
-      while (_filtered_wf_low->GetAmp(peak_time_filt+1) > _filtered_wf_low->GetAmp(peak_time_filt)) peak_time_filt++
+      while (_filtered_wf_low->GetAmp(peak_time_filt+1) > _filtered_wf_low->GetAmp(peak_time_filt)) peak_time_filt++;
 
 
       // Finding the end of the pulse
