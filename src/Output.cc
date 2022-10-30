@@ -77,6 +77,7 @@ void Output::SetupSiPM() {
     max_val.push_back(ch_vec);
     min_val.push_back(ch_vec);
     height.push_back(ch_vec);
+    filtered_height.push_back(ch_vec);
     peak_time.push_back(ch_vec);
     half_time.push_back(ch_vec);
     filtered_integral.push_back(ch_vec);
@@ -91,6 +92,7 @@ void Output::SetupSiPM() {
     _pulseTree->Branch(Form("max_val_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&max_val[i_ch]);
     _pulseTree->Branch(Form("min_val_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&min_val[i_ch]);
     _pulseTree->Branch(Form("height_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&height[i_ch]);
+    _pulseTree->Branch(Form("filtered_height_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&filtered_height[i_ch]);
     _pulseTree->Branch(Form("peak_time_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&peak_time[i_ch]);
     _pulseTree->Branch(Form("half_time_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&half_time[i_ch]);
     _pulseTree->Branch(Form("nafterpulses_ch%d", Config::Get()->GetParameterIvec("ch_ids")[i_ch]),&nafterpulses[i_ch]);
